@@ -1,11 +1,29 @@
+import { readFileSync } from 'node:fs'
 import { applyFixes } from 'markdownlint'
 import { lint } from 'markdownlint/promise'
+import { micromark } from 'micromark'
+import { gfm, gfmHtml } from 'micromark-extension-gfm'
 import { describe, expect, it } from 'vitest'
 // @ts-expect-error — the rules are plain ESM JavaScript, shipped as-is.
 import rules from './index.mjs'
 
 const NBSP = ' '
 const THIN_NBSP = ' '
+
+/**
+ * The document as the reader sees it, which no fix may change.
+ *
+ * The whitespace HTML itself treats as insignificant is collapsed: a newline
+ * inside a paragraph renders as a space, and moving one is exactly what a
+ * semantic line break does. Inside `<pre>` it is left alone — there it is
+ * significant, and no rule edits inside a code block.
+ */
+function render(markdown: string) {
+  return micromark(markdown, { extensions: [gfm()], htmlExtensions: [gfmHtml()] })
+    .split(/(<pre[\s\S]*?<\/pre>)/)
+    .map((part, index) => (index % 2 === 1 ? part : part.replace(/\s+/g, ' ')))
+    .join('')
+}
 
 /** Run one rule over a document and return what it reported. */
 async function check(rule: string, markdown: string, config: Record<string, unknown> = {}) {
@@ -114,5 +132,42 @@ describe('SEMBR004 — split code span', () => {
 
   it('leaves a fenced block alone', async () => {
     expect(await check('SEMBR004', '```js\nconst a = 1\n```')).toHaveLength(0)
+  })
+})
+
+describe('corpus', () => {
+  // Prose written before the rules existed, by someone not thinking about them:
+  // invented examples agree with the rule that produced them, real text does not.
+  const corpus = readFileSync(new URL('./fixtures/corpus.md', import.meta.url), 'utf8')
+
+  it('reports the French spacing, and only where it is missing', async () => {
+    const errors = await check('SEMBR002', corpus)
+    // Two colons and two list semicolons — and nothing from the table, the code
+    // block, the link or the image, which all carry the same punctuation.
+    expect(errors.map((error) => error.lineNumber)).toEqual([21, 24, 26, 27])
+  })
+
+  it('sees every sentence that ends mid-line, and no heading', async () => {
+    const errors = await check('SEMBR003', corpus)
+    // Four prose lines. Not the semicolon on line 15, which ends a clause and
+    // not a sentence; not the headings; not the table row that reads like one.
+    expect(errors.map((error) => error.lineNumber)).toEqual([10, 11, 14, 21])
+  })
+
+  it('finds nothing to say about breaks that were made correctly', async () => {
+    expect(await check('SEMBR001', corpus)).toHaveLength(0)
+    expect(await check('SEMBR004', corpus)).toHaveLength(0)
+  })
+
+  it("leaves the rendered output untouched — the specification's only MUST NOT", async () => {
+    // SemBr 1.0, rule 2: "A semantic line break MUST NOT alter the final
+    // rendered output of the document." Both fixable rules are checked against
+    // the renderer rather than against a reading of the code.
+    const fixed = applyFixes(corpus, [
+      ...(await check('SEMBR002', corpus)),
+      ...(await check('SEMBR003', corpus)),
+    ])
+    expect(fixed).not.toBe(corpus)
+    expect(render(fixed)).toBe(render(corpus))
   })
 })

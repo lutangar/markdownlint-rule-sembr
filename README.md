@@ -57,6 +57,23 @@ to the list [sentence-splitter](https://github.com/textlint-rule/sentence-splitt
 already knows. Its list is English, so a French document wants at least
 `p.`, `ex.` and `cf.`. The other three rules take no options.
 
+## Against the specification
+
+[SemBr 1.0](https://sembr.org) states thirteen rules. What this package covers,
+and what it does not:
+
+| Spec | | Here |
+| --- | --- | --- |
+| 4 | A break **MUST** occur after a sentence | `SEMBR003` — the only MUST about placement, and the one rule that can be fixed automatically |
+| 2 | A break **MUST NOT** alter the rendered output | Property-tested: the fixes are applied to a corpus and both renderings compared, whitespace collapsed as HTML collapses it |
+| 9 | A break **MUST NOT** occur within a hyphenated word | By construction — the fixer only ever breaks after sentence-final punctuation |
+| 12, 13 | 80 characters **RECOMMENDED**, longer lines allowed for links and code | Not this package's business: `MD013` with `strict: false` already says exactly that |
+| 5 | A break **SHOULD** occur after an independent clause (`,` `;` `:` `—`) | **Not implemented.** Deciding whether a comma separates independent clauses is the part no rule answers |
+| 1, 3, 6, 7, 8, 10, 11 | MAY and SHOULD, on grouping and emphasis | Editorial: not machine-checkable |
+
+`SEMBR001`, `SEMBR002` and `SEMBR004` are outside the specification. It says
+where a break should fall; they say what a break must not damage on its way.
+
 ## What the rules do not read
 
 They run on the micromark token stream, so fenced and indented code blocks, HTML
