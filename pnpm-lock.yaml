@@ -11,6 +11,12 @@ importers:
       markdownlint-rule-helpers:
         specifier: ^0.31.0
         version: 0.31.0
+      micromark:
+        specifier: ^4.0.2
+        version: 4.0.2
+      micromark-extension-gfm:
+        specifier: ^3.0.0
+        version: 3.0.0
       sentence-splitter:
         specifier: ^5.0.1
         version: 5.0.1
@@ -24,12 +30,6 @@ importers:
       markdownlint-cli2:
         specifier: ^0.22.1
         version: 0.22.1
-      micromark:
-        specifier: ^4.0.2
-        version: 4.0.2
-      micromark-extension-gfm:
-        specifier: ^3.0.0
-        version: 3.0.0
       vitest:
         specifier: ^2.1.9
         version: 2.1.9

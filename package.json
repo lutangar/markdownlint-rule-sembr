@@ -9,7 +9,7 @@
   "bin": {
     "sembr-format": "src/format.mjs"
   },
-  "files": ["src", "README.md", "LICENSE"],
+  "files": ["src", "!src/**/*.test.ts", "!src/fixtures", "README.md", "LICENSE"],
   "keywords": [
     "markdownlint",
     "markdownlint-rule",
@@ -35,14 +35,14 @@
   },
   "dependencies": {
     "markdownlint-rule-helpers": "^0.31.0",
+    "micromark": "^4.0.2",
+    "micromark-extension-gfm": "^3.0.0",
     "sentence-splitter": "^5.0.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "markdownlint": "^0.40.0",
     "markdownlint-cli2": "^0.22.1",
-    "micromark": "^4.0.2",
-    "micromark-extension-gfm": "^3.0.0",
     "vitest": "^2.1.9"
   },
   "publishConfig": {
