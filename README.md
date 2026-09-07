@@ -91,7 +91,8 @@ Deux règles : une ; et une autre !
      replaced by U+00A0 and U+202F -->
 ```
 
-> [!NOTE] Those characters are invisible in a source file.
+> [!NOTE]
+> Those characters are invisible in a source file.
 > Some teams would rather keep ordinary spaces in Markdown and apply French spacing when
 > rendering; this rule is off in such a repository, which is what `"SEMBR002": false` is
 > for.

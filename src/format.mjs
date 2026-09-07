@@ -31,6 +31,12 @@ const OPTIONS = {
 
 const FENCE = /^\s{0,3}(`{3,}|~{3,})/
 const OPAQUE = /^(\s{0,3}\||\s{0,3}#|\s{4,}|\s{0,3}\[[^\]]+\]:|<)/
+/**
+ * A GitHub/GitLab alert marker, which must stay alone on its line or the
+ * alert stops being one. Invisible to the rendering check: micromark does not
+ * implement that extension, so both versions come out identical.
+ */
+const ALERT = /^\s*>\s*\[!\w+\]\s*$/
 const LEAD = /^(\s*(?:>\s*)*)((?:[-*+]|\d+[.)])\s+)?/
 const BOUNDARY = /[.;:,—»)]$/
 // A code span is delimited by a run of backticks and ends at the next run of
@@ -150,7 +156,7 @@ function format(source) {
     // A line carrying nothing but its markup — `>` alone inside a blockquote —
     // is a paragraph break, not a line of the paragraph above it.
     const [own = ''] = LEAD.exec(line) ?? []
-    if (line.slice(own.length).trim() === '' || OPAQUE.test(line)) {
+    if (line.slice(own.length).trim() === '' || OPAQUE.test(line) || ALERT.test(line)) {
       flush()
       out.push(line)
       continue
