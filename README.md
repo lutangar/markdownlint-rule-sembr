@@ -35,15 +35,19 @@ In `.markdownlint-cli2.jsonc`:
 {
   "customRules": ["markdownlint-rule-sembr"],
   "config": {
-    "SEMBR001": true,
-    "SEMBR002": true,
-    "SEMBR004": true,
-    // One sentence per line is a target more often than a starting point.
-    // Enable it once the reflow is done, or run it on its own.
-    "SEMBR003": { "abbreviations": ["p.", "ex.", "cf.", "réf."] }
+    // One sentence per line is a target more often than a starting point: on an
+    // existing repository it reports every wrapped paragraph at once. Turn it on
+    // when the reflow is done, or run it on its own.
+    "SEMBR003": false,
+    // French documents want these; an English-only project can leave them out.
+    "SEMBR002": true
   }
 }
 ```
+
+**The rules are opt-out, not opt-in.** Loading `customRules` enables all four,
+as it does for any markdownlint rule: with `"default": true`, or with no `config`
+at all, they are on. Name the ones you do not want.
 
 `markdownlint-cli2 --fix` applies what `SEMBR002` and `SEMBR003` propose:
 non-breaking spaces in place, and a line break after a sentence that repeats
