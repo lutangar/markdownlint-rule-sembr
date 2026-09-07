@@ -6,6 +6,7 @@
   "license": "MIT",
   "type": "module",
   "main": "src/index.mjs",
+  "exports": "./src/index.mjs",
   "bin": {
     "sembr-format": "src/format.mjs"
   },
@@ -18,6 +19,9 @@
     "markdown",
     "lint"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "homepage": "https://gitlab.com/apps_education/peertube/tubes-fleet/-/tree/main/packages/markdownlint-sembr",
   "bugs": "https://gitlab.com/apps_education/peertube/tubes-fleet/-/issues",
   "repository": {
@@ -28,9 +32,6 @@
   "dependencies": {
     "markdownlint-rule-helpers": "^0.31.0",
     "sentence-splitter": "^5.0.1"
-  },
-  "peerDependencies": {
-    "markdownlint": ">=0.37"
   },
   "publishConfig": {
     "access": "public"

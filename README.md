@@ -7,15 +7,12 @@ meaning rather than at a fixed column.
 Where that boundary falls is a question of meaning, and no rule answers it.
 These check what a machine can decide around the break.
 
-| Rule | Name | What it reports | Fixable |
-| --- | --- | --- | --- |
-| `SEMBR001` | `sembr-orphan-punctuation` | A line opening on `: ; ! ? » , )` — the break came one character too early | |
-| `SEMBR002` | `sembr-non-breaking-space` | An ordinary space before `; : ! ? % »`, or after `«`. A break may happen there, and French typography forbids it | ✓ |
-| `SEMBR003` | `sembr-one-sentence-per-line` | A sentence ending mid-line | ✓ |
-| `SEMBR004` | `sembr-split-inline-span` | A code span split across two lines: it survives rendering, not a search | |
-
-`SEMBR002` serves both languages from one rule: an ordinary space before that
-punctuation is a typographic error in French, and does not occur in English.
+| Rule | Alias | Fixable |
+| --- | --- | --- |
+| [`SEMBR001`](#sembr001---line-starts-with-punctuation-that-belongs-to-the-previous-line) | `sembr-orphan-punctuation` | |
+| [`SEMBR002`](#sembr002---ordinary-space-where-french-typography-requires-a-non-breaking-one) | `sembr-non-breaking-space` | ✓ |
+| [`SEMBR003`](#sembr003---a-sentence-ends-mid-line) | `sembr-one-sentence-per-line` | ✓ |
+| [`SEMBR004`](#sembr004---a-code-span-is-split-across-lines) | `sembr-split-inline-span` | |
 
 ## Install
 
@@ -23,11 +20,7 @@ punctuation is a typographic error in French, and does not occur in English.
 npm install --save-dev markdownlint-rule-sembr
 ```
 
-`markdownlint` itself is a peer dependency (`>= 0.37`), which
-[markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2) already
-brings.
-
-## Use
+Node 22 or later, which is what `markdownlint-rule-helpers` requires.
 
 In `.markdownlint-cli2.jsonc`:
 
@@ -38,21 +31,119 @@ In `.markdownlint-cli2.jsonc`:
     // One sentence per line is a target more often than a starting point: on an
     // existing repository it reports every wrapped paragraph at once. Turn it on
     // when the reflow is done, or run it on its own.
-    "SEMBR003": false,
-    // French documents want these; an English-only project can leave them out.
-    "SEMBR002": true
+    "SEMBR003": false
   }
 }
 ```
 
-**The rules are opt-out, not opt-in.** Loading `customRules` enables all four,
-as it does for any markdownlint rule: with `"default": true`, or with no `config`
-at all, they are on. Name the ones you do not want.
+**The rules are opt-out, not opt-in.** Loading `customRules` enables all four, as
+it does for any markdownlint rule: with `"default": true`, or with no `config` at
+all, they are on. Name the ones you do not want.
 
-`markdownlint-cli2 --fix` applies what `SEMBR002` and `SEMBR003` propose:
-non-breaking spaces in place, and a line break after a sentence that repeats
-whatever prefix keeps it in its block — a blockquote marker, the indentation of
-a list item.
+## Rules
+
+### `SEMBR001` - Line starts with punctuation that belongs to the previous line
+
+Tags: `whitespace`, `sembr`
+
+Aliases: `sembr-orphan-punctuation`
+
+A line opening on `:` `;` `!` `?` `»` `,` or `)` is a break made one character
+too early. The punctuation closes what the previous line said, and reading it
+alone at the start of a line costs the reader a beat.
+
+```markdown
+<!-- Triggers -->
+Une phrase coupée
+: trop tôt.
+
+<!-- Passes -->
+Une phrase coupée :
+au bon endroit.
+```
+
+### `SEMBR002` - Ordinary space where French typography requires a non-breaking one
+
+Tags: `whitespace`, `sembr`
+
+Aliases: `sembr-non-breaking-space`
+
+Fixable: violations can be fixed by tooling
+
+French puts a space before `;` `:` `!` `?` `%` and inside `«` `»`, and that space
+must not break. Written as an ordinary space, a renderer is free to end the line
+there and leave the punctuation stranded at the start of the next one.
+
+One rule serves both languages: an ordinary space in front of that punctuation is
+a mistake in French and does not occur in English at all.
+
+The fix inserts the right character — U+00A0 before `:` and inside the quotation
+marks, U+202F (thin) before `;` `!` `?` `%`.
+
+```markdown
+<!-- Triggers -->
+Deux règles : une ; et une autre !
+
+<!-- Passes: the same line, with the spaces before the punctuation
+     replaced by U+00A0 and U+202F -->
+```
+
+> [!NOTE]
+> Those characters are invisible in a source file. Some teams would rather keep
+> ordinary spaces in Markdown and apply French spacing when rendering; this rule
+> is off in such a repository, which is what `"SEMBR002": false` is for.
+
+### `SEMBR003` - A sentence ends mid-line
+
+Tags: `sembr`
+
+Aliases: `sembr-one-sentence-per-line`
+
+Parameters:
+
+- `abbreviations`: full stops that do not end a sentence (`string[]`, default
+  `[]`)
+
+Fixable: violations can be fixed by tooling
+
+The one **MUST** of the specification about where a break falls. Sentence
+boundaries come from
+[sentence-splitter](https://github.com/textlint-rule/sentence-splitter), which
+already knows about abbreviations, decimals and quotation marks; its list is
+English, so a French document wants at least `p.`, `ex.` and `cf.`.
+
+The fix repeats whatever prefix keeps the line in its block — a blockquote
+marker, the indentation of a list item.
+
+```markdown
+<!-- Triggers -->
+La première. La seconde.
+
+<!-- Passes -->
+La première.
+La seconde.
+```
+
+Headings are left alone: a heading is one unit whatever punctuation it carries.
+
+### `SEMBR004` - A code span is split across lines
+
+Tags: `code`, `sembr`
+
+Aliases: `sembr-split-inline-span`
+
+A code span broken in two still renders, so nothing looks wrong — but the
+identifier inside it can no longer be found by a search, which is what people
+actually do with code in prose.
+
+````markdown
+<!-- Triggers -->
+Call `myFunction(
+argument)` here.
+
+<!-- Passes -->
+Call `myFunction(argument)` here.
+````
 
 ## Reflowing a document
 
@@ -76,13 +167,6 @@ blockquote continuation losing its marker, a break that left `**` preceded by a
 space (which stops being emphasis), a bare `>` line silently merging two
 paragraphs, and a sentence split inside `` `overdueMinors !== 0` `` — the
 splitter does not know Markdown, so the atoms are masked before it runs.
-
-### Options
-
-`SEMBR003` takes `abbreviations`: full stops that do not end a sentence, added
-to the list [sentence-splitter](https://github.com/textlint-rule/sentence-splitter)
-already knows. Its list is English, so a French document wants at least
-`p.`, `ex.` and `cf.`. The other three rules take no options.
 
 ## Against the specification
 
