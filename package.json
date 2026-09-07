@@ -1,7 +1,6 @@
 {
   "name": "markdownlint-rule-sembr",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "markdownlint rules in support of semantic line breaks",
   "license": "MIT",
   "type": "module",
@@ -22,16 +21,29 @@
   "engines": {
     "node": ">=22"
   },
-  "homepage": "https://gitlab.com/apps_education/peertube/tubes-fleet/-/tree/main/packages/markdownlint-sembr",
-  "bugs": "https://gitlab.com/apps_education/peertube/tubes-fleet/-/issues",
+  "homepage": "https://codeberg.org/lutangar/markdownlint-rule-sembr",
+  "bugs": "https://codeberg.org/lutangar/markdownlint-rule-sembr/issues",
   "repository": {
     "type": "git",
-    "url": "https://gitlab.com/apps_education/peertube/tubes-fleet",
-    "directory": "packages/markdownlint-sembr"
+    "url": "https://codeberg.org/lutangar/markdownlint-rule-sembr.git"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "lint": "biome check . && markdownlint-cli2 \"**/*.md\"",
+    "lint:fix": "biome check --write . && markdownlint-cli2 --fix \"**/*.md\"",
+    "format": "node src/format.mjs"
   },
   "dependencies": {
     "markdownlint-rule-helpers": "^0.31.0",
     "sentence-splitter": "^5.0.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "markdownlint": "^0.40.0",
+    "markdownlint-cli2": "^0.22.1",
+    "micromark": "^4.0.2",
+    "micromark-extension-gfm": "^3.0.0",
+    "vitest": "^2.1.9"
   },
   "publishConfig": {
     "access": "public"

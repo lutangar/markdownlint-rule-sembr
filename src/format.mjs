@@ -33,7 +33,9 @@ const FENCE = /^\s{0,3}(`{3,}|~{3,})/
 const OPAQUE = /^(\s{0,3}\||\s{0,3}#|\s{4,}|\s{0,3}\[[^\]]+\]:|<)/
 const LEAD = /^(\s*(?:>\s*)*)((?:[-*+]|\d+[.)])\s+)?/
 const BOUNDARY = /[.;:,—»)]$/
-const ATOM = /`[^`]*`|!?\[[^\]]*\]\([^)]*\)|<[^>\s]*>/g
+// A code span is delimited by a run of backticks and ends at the next run of
+// the same length: ``a `b` c`` is one atom, not three.
+const ATOM = /(`+)[\s\S]*?\1(?!`)|!?\[[^\]]*\]\([^)]*\)|<[^>\s]*>/g
 
 /**
  * Hide code spans, links and images behind a placeholder.
