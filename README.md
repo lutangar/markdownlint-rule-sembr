@@ -196,6 +196,13 @@ HTML blocks and tables are skipped whole, and code spans, link destinations,
 autolinks and images are masked inside a line before any rule sees it.
 Link *text* stays visible: it is prose, and a sentence can end in it.
 
+## Issues and patches
+
+The repository and its [issue tracker](https://codeberg.org/lutangar/markdownlint-rule-sembr/issues)
+live on [Codeberg](https://codeberg.org/lutangar/markdownlint-rule-sembr).
+The GitHub repository is a mirror:
+it accepts neither issues nor pull requests.
+
 ## Licence
 
 [MIT](LICENSE).
