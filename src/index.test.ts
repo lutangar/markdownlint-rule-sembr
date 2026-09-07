@@ -151,7 +151,7 @@ describe('corpus', () => {
     const errors = await check('SEMBR003', corpus)
     // Four prose lines. Not the semicolon on line 15, which ends a clause and
     // not a sentence; not the headings; not the table row that reads like one.
-    expect(errors.map((error) => error.lineNumber)).toEqual([10, 11, 14, 21])
+    expect(errors.map((error) => error.lineNumber)).toEqual([4, 10, 11, 14, 21])
   })
 
   it('finds nothing to say about breaks that were made correctly', async () => {

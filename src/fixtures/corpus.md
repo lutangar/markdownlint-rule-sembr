@@ -1,8 +1,8 @@
 # Corpus
 
-Real prose, not invented examples: excerpts from the practices library the rules
-were first run against (<https://codeberg.org/lutangar/practices>, EUPL-1.2).
-Invented sentences agree with the rule that produced them; this does not.
+Real prose, not invented examples: excerpts from the author's own practices
+library, the corpus these rules were first run against. Invented sentences agree
+with the rule that produced them; this does not.
 
 ## Anglais replié à 80
 

@@ -3,9 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "markdownlint rules in support of semantic line breaks",
-  "license": "EUPL-1.2",
+  "license": "MIT",
   "type": "module",
   "main": "src/index.mjs",
+  "bin": {
+    "sembr-format": "src/format.mjs"
+  },
   "files": ["src", "README.md", "LICENSE"],
   "keywords": [
     "markdownlint",

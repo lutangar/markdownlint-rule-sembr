@@ -50,6 +50,29 @@ non-breaking spaces in place, and a line break after a sentence that repeats
 whatever prefix keeps it in its block — a blockquote marker, the indentation of
 a list item.
 
+## Reflowing a document
+
+A lint rule can only edit the line it reports on, so `--fix` breaks after a
+sentence and leaves the rest of the old wrapping where it was — one sentence per
+line, and a staircase of short lines after it. Reflowing means unwrapping the
+block first, which is a formatter's job.
+
+```sh
+npx sembr-format doc/*.md
+```
+
+It joins each prose block, splits it into sentences, and wraps each one at the
+latest boundary of meaning that fits — a clause end within reach, plain filling
+otherwise. `SEMBR_WIDTH` sets the target (88 by default). Headings, tables, code
+blocks and link definitions are copied through untouched.
+
+**It renders both versions and compares them before writing anything**, and
+refuses the file if they differ. That is not ceremony: writing it turned up a
+blockquote continuation losing its marker, a break that left `**` preceded by a
+space (which stops being emphasis), a bare `>` line silently merging two
+paragraphs, and a sentence split inside `` `overdueMinors !== 0` `` — the
+splitter does not know Markdown, so the atoms are masked before it runs.
+
 ### Options
 
 `SEMBR003` takes `abbreviations`: full stops that do not end a sentence, added
@@ -83,4 +106,4 @@ autolinks and images are masked inside a line before any rule sees it. Link
 
 ## Licence
 
-[EUPL-1.2](LICENSE).
+[MIT](LICENSE).
