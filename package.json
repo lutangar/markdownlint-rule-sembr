@@ -7,15 +7,9 @@
   "main": "src/index.mjs",
   "exports": "./src/index.mjs",
   "bin": {
-    "sembr-format": "src/format.mjs"
+    "sembr-format": "src/cli.mjs"
   },
-  "files": [
-    "src",
-    "!src/**/*.test.ts",
-    "!src/fixtures",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["src", "!src/**/*.test.ts", "!src/fixtures", "README.md", "LICENSE"],
   "keywords": [
     "markdownlint",
     "markdownlint-rule",
@@ -37,7 +31,7 @@
     "test": "vitest run",
     "lint": "biome check . && markdownlint-cli2 \"**/*.md\"",
     "lint:fix": "biome check --write . && markdownlint-cli2 --fix \"**/*.md\"",
-    "format": "node src/format.mjs"
+    "format": "node src/cli.mjs"
   },
   "dependencies": {
     "markdownlint-rule-helpers": "^0.31.0",

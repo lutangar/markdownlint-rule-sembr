@@ -1,29 +1,18 @@
 import { readFileSync } from 'node:fs'
 import { applyFixes } from 'markdownlint'
 import { lint } from 'markdownlint/promise'
-import { micromark } from 'micromark'
-import { gfm, gfmHtml } from 'micromark-extension-gfm'
 import { describe, expect, it } from 'vitest'
+// @ts-expect-error — plain ESM JavaScript, shipped as-is.
+import { render } from './format.mjs'
 // @ts-expect-error — the rules are plain ESM JavaScript, shipped as-is.
 import rules from './index.mjs'
 
 const NBSP = ' '
 const THIN_NBSP = ' '
 
-/**
- * The document as the reader sees it, which no fix may change.
- *
- * The whitespace HTML itself treats as insignificant is collapsed: a newline
- * inside a paragraph renders as a space, and moving one is exactly what a
- * semantic line break does. Inside `<pre>` it is left alone — there it is
- * significant, and no rule edits inside a code block.
- */
-function render(markdown: string) {
-  return micromark(markdown, { extensions: [gfm()], htmlExtensions: [gfmHtml()] })
-    .split(/(<pre[\s\S]*?<\/pre>)/)
-    .map((part, index) => (index % 2 === 1 ? part : part.replace(/\s+/g, ' ')))
-    .join('')
-}
+// `render` — the document as the reader sees it, which no fix may change — is
+// imported from the formatter so the rule tests and the shipped code agree on
+// what "the rendered output" is.
 
 /** Run one rule over a document and return what it reported. */
 async function check(rule: string, markdown: string, config: Record<string, unknown> = {}) {
@@ -104,9 +93,33 @@ describe('SEMBR003 — one sentence per line', () => {
   })
 
   it('takes extra abbreviations from the configuration', async () => {
-    const doc = 'Voir p. ex. cette page.'
+    // `chap.` is not in the default list, so `chap. Trois` splits — until the
+    // configuration adds it.
+    const doc = 'Voir chap. Trois du manuel pour la suite.'
     expect(await check('SEMBR003', doc)).toHaveLength(1)
-    expect(await check('SEMBR003', doc, { abbreviations: ['p.', 'ex.'] })).toHaveLength(0)
+    expect(await check('SEMBR003', doc, { abbreviations: ['chap.'] })).toHaveLength(0)
+  })
+
+  it('does not split a default abbreviation before a capitalised word', async () => {
+    // `sentence-splitter` ends a sentence at `cf.` when a capital follows, taking
+    // the proper noun for a new sentence. A known abbreviation stitches it back,
+    // and `cf.` is one by default — so with no configuration the rule and the
+    // formatter (which keeps them together) agree.
+    const doc = 'Servi par Caddy, cf. ADR-0065 pour le détail.'
+    expect(await check('SEMBR003', doc)).toHaveLength(0)
+  })
+
+  it('still sees a real sentence end that precedes an abbreviation tail', async () => {
+    const doc = 'Le transcode est servi. cf. ADR-0065 pour le détail.'
+    expect(await check('SEMBR003', doc)).toHaveLength(1)
+  })
+
+  it('does not swallow a French break at an English abbreviation look-alike', async () => {
+    // `No.` and friends are in sentence-splitter's default English list but not
+    // ours: a French sentence ending on such a token before a capital is a real
+    // break, not an abbreviation.
+    const doc = 'On garde le paragraphe No. Cela arrive de temps en temps.'
+    expect(await check('SEMBR003', doc)).toHaveLength(1)
   })
 
   it('leaves a heading alone: it is one unit whatever it contains', async () => {
@@ -116,6 +129,15 @@ describe('SEMBR003 — one sentence per line', () => {
   it('says nothing about a full stop inside a link destination', async () => {
     expect(
       await check('SEMBR003', 'Voir [la page](https://x.example/a.b c.d) pour la suite.'),
+    ).toHaveLength(0)
+  })
+
+  it('keeps a French-spaced mark riding on a closer inside one sentence', async () => {
+    // `« … » !` sets a space before the `!`; the closer run must swallow it, or
+    // the stranded `!` reads as a boundary and the single sentence is falsely
+    // split.
+    expect(
+      await check('SEMBR003', 'Un aparté (voir « ça » !) puis la suite continue ici.'),
     ).toHaveLength(0)
   })
 })
@@ -169,5 +191,26 @@ describe('corpus', () => {
     ])
     expect(fixed).not.toBe(corpus)
     expect(render(fixed)).toBe(render(corpus))
+  })
+})
+
+describe('SEMBR003 — the per-line/whole-block seam', () => {
+  it('is stricter on hand-written multi-line emphasis by design', async () => {
+    // Lockstep is on FORMATTER output: the formatter never breaks inside an
+    // emphasis span. When a human wraps one across lines, the span is unclosed on
+    // line 1, so the shared splitter cannot see it there and the rule flags the
+    // mid-line end. Pinned so nobody "relaxes" the rule to match the formatter.
+    expect(await check('SEMBR003', '**Deux phrases. Ici\nsuite** ok.')).toHaveLength(1)
+    // The same content on one line — the span closed — is not flagged.
+    expect(await check('SEMBR003', '**Deux phrases. Ici** puis une suite.')).toHaveLength(0)
+  })
+
+  it('reads a masked code span inside emphasis as a word (FILLER stays a word char)', async () => {
+    // sentencesOf runs micromark on the text the rule masks — a code span becomes
+    // a run of word-char 'x'. A boundary inside a strong span that also holds a
+    // code span must still count as inside, so the rule does not flag it. If
+    // FILLER ever became punctuation or space, this would break.
+    const doc = 'La règle **tient `même. ici` toujours** dans un cas précis.'
+    expect(await check('SEMBR003', doc)).toHaveLength(0)
   })
 })

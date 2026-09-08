@@ -11,7 +11,7 @@
  * build step would make linting depend on compiling.
  */
 import { filterByTypes } from 'markdownlint-rule-helpers/micromark'
-import { DefaultAbbrMarkerOptions, split as splitSentences } from 'sentence-splitter'
+import { LEADING_MARKUP, ORPHAN_PUNCTUATION, midLineEnds } from './sentences.mjs'
 
 /**
  * Blocks whose lines are not prose at all. Their content is skipped whole,
@@ -41,9 +41,6 @@ const THIN_NBSP = '\u202f'
 
 /** Filler that keeps every offset intact and carries no punctuation. */
 const FILLER = 'x'
-
-/** Blockquote markers and list bullets: markup, not the sentence. */
-const LEADING_MARKUP = /^(\s*(?:>\s*)*)((?:[-*+]|\d+[.)])\s+)?/
 
 /**
  * The document as prose: one entry per line, `null` where the line is not prose
@@ -91,7 +88,7 @@ const orphanPunctuation = {
     eachProseLine(params, (masked, source, lineNumber) => {
       const prefix = LEADING_MARKUP.exec(masked)?.[0].length ?? 0
       const character = masked[prefix]
-      if (character && ':;!?»,)'.includes(character)) {
+      if (character && ORPHAN_PUNCTUATION.includes(character)) {
         onError({
           lineNumber,
           detail: `The line opens on "${character}", so the break came one character too early`,
@@ -147,18 +144,12 @@ const oneSentencePerLine = {
   tags: ['sembr'],
   parser: 'micromark',
   function: (params, onError) => {
-    // Sentence boundaries come from `sentence-splitter`, which already knows
-    // about abbreviations, decimals and quotation marks. Its list is English;
+    // Mid-line sentence ends come from `midLineEnds` — the same predicate the
+    // formatter's self-check uses, over `sentencesOf` with the configured
+    // abbreviations and the shared stitching, so a line the formatter emits is a
+    // line this rule accepts. The default list is English-plus-French;
     // `abbreviations` adds to it rather than replacing it.
     const extra = Array.isArray(params.config.abbreviations) ? params.config.abbreviations : []
-    const options = {
-      AbbrMarker: {
-        language: {
-          ...DefaultAbbrMarkerOptions.language,
-          ABBREVIATIONS: [...DefaultAbbrMarkerOptions.language.ABBREVIATIONS, ...extra],
-        },
-      },
-    }
     const headings = new Set()
     for (const token of filterByTypes(params.parsers.micromark.tokens, ['atxHeading'])) {
       for (let line = token.startLine; line <= token.endLine; line++) headings.add(line)
@@ -167,11 +158,7 @@ const oneSentencePerLine = {
     eachProseLine(params, (masked, source, lineNumber) => {
       // A heading is one unit and cannot be split, whatever punctuation it holds.
       if (headings.has(lineNumber)) return
-      const sentences = splitSentences(masked, options).filter((node) => node.type === 'Sentence')
-      for (const sentence of sentences.slice(0, -1)) {
-        const [, end] = sentence.range
-        const gap = /^\s+/.exec(masked.slice(end))?.[0] ?? ''
-        if (gap === '' || masked.slice(end + gap.length).trim() === '') continue
+      for (const { end, gap } of midLineEnds(masked, extra)) {
         onError({
           lineNumber,
           detail: 'The sentence ends here — the next one starts a new line',
